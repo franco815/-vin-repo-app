@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>VIN Repo App</title>
+<style>
+  /* ── TOKENS ─────────────────────────────────────────── */
+  :root {
+    --black:    #0D0D0F;
+    --ink:      #1A1A2E;
+    --purple:   #533483;
+    --purple-l: #7B52C7;
+    --purple-xl:#EDE9FA;
+    --green:    #1D9E75;
+    --green-l:  #D4EDDA;
+    --amber:    #BA7517;
+    --amber-l:  #FFF3CD;
+    --red:      #E24B4A;
+    --red-l:    #F8D7DA;
+    --blue:     #185FA5;
+    --blue-l:   #E6F1FB;
+    --gray-1:   #F4F4F6;
+    --gray-2:   #E8E8EE;
+    --gray-3:   #BCBCC8;
+    --gray-4:   #7A7A8C;
+    --gray-5:   #3D3D50;
+    --white:    #FFFFFF;
+    --radius:   14px;
+    --radius-sm:8px;
+    --shadow:   0 2px 16px rgba(0,0,0,0.10);
+    --shadow-lg:0 8px 40px rgba(0,0,0,0.18);
+  }
+
+  /* ── RESET ──────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; background: var(--gray-1); color: var(--ink); -webkit-tap-highlight-color: transparent; }
+  button { cursor: pointer; border: none; font-family: inherit; }
+  input, select, textarea { font-family: inherit; outline: none; }
+
+  /* ── LAYOUT ─────────────────────────────────────────── */
+  #app { min-height: 100vh; display: flex; flex-direction: column; }
+  .screen { display: none; flex-direction: column; min-height: 100vh; animation: fadeIn 0.22s ease; }
+  .screen.active { display: flex; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+  /* ── HEADER ─────────────────────────────────────────── */
+  .topbar {
+    background: var(--ink);
+    color: var(--white);
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar .logo {
+    font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
+    color: var(--white);
+  }
+  .topbar .logo span { color: var(--purple-l); }
+  .topbar .subtitle { font-size: 12px; color: var(--gray-3); flex: 1; }
+  .back-btn {
+    background: none; color: var(--gray-3);
+    font-size: 22px; padding: 0 8px 0 0;
+    display: none;
+  }
+  .back-btn.show { display: block; }
+  .badge-user {
+    background: var(--purple);
+    color: var(--white);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 12px; font-weight: 600;
+  }
+
+  /* ── CARDS / CONTENT ─────────────────────────────────── */
+  .content { flex: 1; padding: 20px 16px; max-width: 520px; width: 100%; margin: 0 auto; }
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 700;
+    color: var(--gray-4); text-transform: uppercase;
+    letter-spacing: 0.06em; margin-bottom: 14px;
+  }
+
+  /* ── LOGIN ───────────────────────────────────────────── */
+  #screen-login {
+    background: linear-gradient(160deg, var(--ink) 0%, #1f1435 60%, #0d0d1a 100%);
+    justify-content: center; align-items: center;
+    padding: 32px 20px;
+  }
+  .login-box {
+    width: 100%; max-width: 360px;
+    text-align: center;
+  }
+  .login-logo {
+    font-size: 48px; font-weight: 900;
+    color: var(--white); letter-spacing: -2px;
+    margin-bottom: 4px;
+  }
+  .login-logo span { color: var(--purple-l); }
+  .login-tagline {
+    font-size: 13px; color: var(--gray-3);
+    margin-bottom: 36px;
+  }
+  .login-field {
+    background: rgba(255,255,255,0.08);
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    color: var(--white);
+    font-size: 16px; width: 100%;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+  .login-field::placeholder { color: rgba(255,255,255,0.35); }
+  .login-field:focus { border-color: var(--purple-l); }
+  .btn-primary {
+    background: var(--purple);
+    color: var(--white);
+    font-size: 16px; font-weight: 700;
+    padding: 15px 28px;
+    border-radius: var(--radius-sm);
+    width: 100%;
+    transition: background 0.18s, transform 0.12s;
+  }
+  .btn-primary:active { transform: scale(0.97); background: #3d2465; }
+  .btn-primary:disabled { background: var(--gray-3); cursor: default; }
+
+  /* ── SEDE SELECTOR ────────────────────────────────────── */
+  .sede-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sede-card {
+    background: var(--white);
+    border: 2px solid var(--gray-2);
+    border-radius: var(--radius);
+    padding: 16px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s;
+  }
+  .sede-card:active { background: var(--purple-xl); border-color: var(--purple); }
+  .sede-card .sede-icon { font-size: 28px; margin-bottom: 6px; }
+  .sede-card .sede-name { font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.3; }
+  .sede-card .sede-status { font-size: 11px; color: var(--green); margin-top: 3px; }
+  .section-label { font-size: 13px; font-weight: 700; color: var(--gray-4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; margin-top: 4px; }
+
+  /* ── STEPS ───────────────────────────────────────────── */
+  .step-progress {
+    display: flex; gap: 4px; padding: 14px 16px;
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-2);
+  }
+  .step-dot {
+    flex: 1; height: 4px; border-radius: 2px;
+    background: var(--gray-2);
+    transition: background 0.3s;
+  }
+  .step-dot.done { background: var(--green); }
+  .step-dot.active { background: var(--purple); }
+
+  .step-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .step-header {
+    background: var(--ink);
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--purple);
+    color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800; flex-shrink: 0;
+  }
+  .step-num.done { background: var(--green); }
+  .step-title { font-size: 15px; font-weight: 700; color: var(--white); }
+  .step-subtitle { font-size: 12px; color: var(--gray-3); margin-top: 2px; }
+  .step-body { padding: 18px 20px; }
+
+  /* ── CHECKBOX ────────────────────────────────────────── */
+  .check-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--gray-2);
+    cursor: pointer;
+  }
+  .check-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .check-box {
+    width: 24px; height: 24px; flex-shrink: 0;
+    border: 2px solid var(--gray-3);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s;
+    margin-top: 1px;
+  }
+  .check-box.checked { background: var(--green); border-color: var(--green); }
+  .check-box .check-tick { color: white; font-size: 14px; display: none; }
+  .check-box.checked .check-tick { display: block; }
+  .check-label { font-size: 14px; line-height: 1.4; color: var(--ink); }
+  .check-note { font-size: 12px; color: var(--amber); margin-top: 3px; font-style: italic; }
+
+  /* ── ALERTA EPP ──────────────────────────────────────── */
+  .epp-banner {
+    background: var(--amber-l);
+    border: 1.5px solid var(--amber);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    font-size: 14px; font-weight: 600;
+    color: #5a3800;
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 14px;
+  }
+  .epp-banner .epp-icon { font-size: 22px; flex-shrink: 0; }
+
+  /* ── CANISTER CARDS ──────────────────────────────────── */
+  .canister-list { display: flex; flex-direction: column; gap: 10px; }
+  .can-card {
+    border: 2px solid var(--gray-2);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--white);
+    transition: border-color 0.2s;
+  }
+  .can-card.done-can { border-color: var(--green); }
+  .can-card.tacc-can { border-color: var(--red); }
+  .can-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    background: var(--gray-1);
+    cursor: pointer;
+  }
+  .can-num {
+    width: 28px; height: 28px; flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--purple);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
+  }
+  .can-num.tacc { background: var(--red); }
+  .can-num.done-num { background: var(--green); }
+  .can-name { font-size: 14px; font-weight: 700; flex: 1; }
+  .can-subname { font-size: 11px; color: var(--gray-4); }
+  .can-chevron { color: var(--gray-3); font-size: 18px; transition: transform 0.2s; }
+  .can-chevron.open { transform: rotate(90deg); }
+  .can-body { display: none; padding: 14px; border-top: 1px solid var(--gray-2); }
+  .can-body.open { display: block; }
+
+  .field-group { margin-bottom: 14px; }
+  .field-label { font-size: 12px; font-weight: 700; color: var(--gray-4); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+  .field-input {
+    width: 100%; padding: 11px 14px;
+    border: 1.5px solid var(--gray-2);
+    border-radius: var(--radius-sm);
+    font-size: 15px; color: var(--ink);
+    background: var(--white);
+    transition: border-color 0.18s;
+  }
+  .field-input:focus { border-color: var(--purple-l); }
+  .field-input.warn { border-color: var(--amber); background: var(--amber-l); }
+  .field-input.err  { border-color: var(--red);   background: var(--red-l); }
+
+  .repl-info {
+    background: var(--blue-l);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 12px; color: var(--blue);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .repl-info strong { font-weight: 700; }
+
+  .warn-tag {
+    background: var(--red-l);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 12px; color: var(--red);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .lote-row {
+    display: flex; gap: 8px;
+  }
+  .lote-row .field-group { flex: 1; }
+
+  .can-save-btn {
+    background: var(--purple);
+    color: white;
+    font-size: 14px; font-weight: 700;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    width: 100%;
+    transition: background 0.18s, transform 0.12s;
+  }
+  .can-save-btn:active { transform: scale(0.97); }
+  .can-save-btn.saved { background: var(--green); }
+
+  /* ── LOTES BADGE ─────────────────────────────────────── */
+  .badge {
+    display: inline-block;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-left: 6px;
+  }
+  .badge-verde   { background: var(--green-l);  color: #155724; }
+  .badge-amarillo{ background: var(--amber-l);  color: #856404; }
+  .badge-rojo    { background: var(--red-l);    color: #721c24; }
+
+  /* ── FOTO UPLOAD ─────────────────────────────────────── */
+  .photo-zone {
+    border: 2px dashed var(--gray-3);
+    border-radius: var(--radius);
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .photo-zone:active { border-color: var(--purple-l); background: var(--purple-xl); }
+  .photo-zone.has-photo { border-color: var(--green); border-style: solid; }
+  .photo-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .photo-icon { font-size: 36px; margin-bottom: 8px; }
+  .photo-label { font-size: 14px; color: var(--gray-4); }
+  .photo-preview { max-width: 100%; border-radius: var(--radius-sm); margin-top: 10px; display: none; }
+  .photo-preview.show { display: block; }
+
+  /* ── FIRMA ───────────────────────────────────────────── */
+  .firma-area {
+    border: 1.5px solid var(--gray-2);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    width: 100%; height: 120px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .firma-clear {
+    background: none;
+    color: var(--gray-4);
+    font-size: 13px;
+    padding: 6px 0;
+    margin-top: 6px;
+    text-decoration: underline;
+  }
+
+  /* ── COBRO CARD ──────────────────────────────────────── */
+  .cobro-card {
+    background: linear-gradient(135deg, var(--purple) 0%, #3d2465 100%);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    color: white;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .cobro-label { font-size: 13px; opacity: 0.75; margin-bottom: 6px; }
+  .cobro-monto { font-size: 40px; font-weight: 900; letter-spacing: -1.5px; }
+  .cobro-sede  { font-size: 13px; opacity: 0.75; margin-top: 6px; }
+
+  /* ── HISTORIAL COBROS ────────────────────────────────── */
+  .cobro-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-2);
+  }
+  .cobro-row:last-child { border-bottom: none; }
+  .cobro-row-sede { font-size: 14px; font-weight: 600; }
+  .cobro-row-fecha { font-size: 12px; color: var(--gray-4); margin-top: 2px; }
+  .cobro-row-monto { font-size: 15px; font-weight: 800; color: var(--purple); }
+  .cobro-total {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 0 0;
+    border-top: 2px solid var(--ink);
+    margin-top: 4px;
+  }
+  .cobro-total-label { font-size: 14px; font-weight: 700; }
+  .cobro-total-monto { font-size: 22px; font-weight: 900; color: var(--green); }
+
+  /* ── ALERTA VENCIMIENTO ──────────────────────────────── */
+  .alerta-venc {
+    background: var(--red-l);
+    border: 1.5px solid var(--red);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13px; color: #721c24;
+    margin-bottom: 12px;
+  }
+
+  /* ── STOCK DASHBOARD ─────────────────────────────────── */
+  .stock-bar-wrap { margin-bottom: 14px; }
+  .stock-bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+  .stock-bar-name { font-weight: 600; }
+  .stock-bar-pct { color: var(--gray-4); }
+  .stock-bar-track { background: var(--gray-2); border-radius: 4px; height: 10px; overflow: hidden; }
+  .stock-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+  .stock-bar-fill.ok   { background: var(--green); }
+  .stock-bar-fill.warn { background: var(--amber); }
+  .stock-bar-fill.low  { background: var(--red); }
+
+  /* ── MAPA PLACEHOLDER ────────────────────────────────── */
+  .mapa-box {
+    background: var(--blue-l);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    color: var(--blue);
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+  .mapa-box .mapa-icon { font-size: 36px; margin-bottom: 8px; }
+
+  /* ── BTN SECONDARY ───────────────────────────────────── */
+  .btn-secondary {
+    background: var(--gray-1);
+    color: var(--ink);
+    font-size: 15px; font-weight: 600;
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    width: 100%;
+    border: 1.5px solid var(--gray-2);
+    margin-bottom: 10px;
+    transition: background 0.15s;
+  }
+  .btn-secondary:active { background: var(--gray-2); }
+
+  .btn-danger {
+    background: var(--red-l);
+    color: var(--red);
+    font-size: 14px; font-weight: 700;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    width: 100%;
+    border: 1.5px solid var(--red);
+  }
+
+  /* ── TOAST ───────────────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--ink); color: white;
+    padding: 12px 22px; border-radius: 30px;
+    font-size: 14px; font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999; white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── LOADING ─────────────────────────────────────────── */
+  .spinner {
+    width: 24px; height: 24px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── CONFIG SCREEN ───────────────────────────────────── */
+  .config-field {
+    width: 100%; padding: 12px 14px;
+    border: 1.5px solid var(--gray-2);
+    border-radius: var(--radius-sm);
+    font-size: 14px; color: var(--ink);
+    margin-bottom: 10px;
+    background: var(--white);
+  }
+  .config-field:focus { border-color: var(--purple-l); }
+  .config-label { font-size: 12px; font-weight: 700; color: var(--gray-4); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
+
+  /* ── RESPONSIVE ──────────────────────────────────────── */
+  @media (max-width: 400px) {
+    .sede-grid { grid-template-columns: 1fr; }
+    .content { padding: 14px 12px; }
+  }
+
+  /* ── SETUP SCREEN ────────────────────────────────────── */
+  .setup-step { display: flex; gap: 14px; margin-bottom: 20px; }
+  .setup-step-num {
+    width: 32px; height: 32px; flex-shrink: 0;
+    border-radius: 50%; background: var(--purple-xl);
+    color: var(--purple); font-weight: 800; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .setup-step-content { flex: 1; }
+  .setup-step-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .setup-step-desc { font-size: 13px; color: var(--gray-4); line-height: 1.5; }
+  .setup-step-desc code {
+    background: var(--gray-1); padding: 2px 6px;
+    border-radius: 4px; font-size: 12px;
+    color: var(--purple); font-family: monospace;
+    word-break: break-all;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ════════════════════════════════════════
+     SCREEN: CONFIG (primera vez)
+═════════════════════════════════════════ -->
+<div id="screen-config" class="screen active">
+  <div class="topbar">
+    <div class="logo">VIN<span>.</span></div>
+    <div class="subtitle">Configuración inicial</div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="card-title">⚙️ Conectar Google Sheets</div>
+      <p style="font-size:13px;color:var(--gray-4);margin-bottom:18px;line-height:1.5;">
+        Antes de usar la app, vinculala con tu Google Sheet. Solo se hace una vez. Seguí los pasos abajo.
+      </p>
+
+      <div class="setup-step">
+        <div class="setup-step-num">1</div>
+        <div class="setup-step-content">
+          <div class="setup-step-title">Publicar el Sheet</div>
+          <div class="setup-step-desc">
+            En tu Google Sheet: <strong>Extensiones → Apps Script</strong>.<br>
+            Pegá el código del archivo <code>apps-script.gs</code> que viene con la app y hacé clic en <strong>Implementar → Nueva implementación → Aplicación web</strong>. Copiá la URL que te da.
+          </div>
+        </div>
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">2</div>
+        <div class="setup-step-content">
+          <div class="setup-step-title">Pegar la URL del Script</div>
+          <div class="setup-step-desc">Pegá la URL de la implementación acá abajo.</div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">URL del Apps Script</div>
+        <input type="url" id="config-url" class="config-field" placeholder="https://script.google.com/macros/s/...">
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">3</div>
+        <div class="setup-step-content">
+          <div class="setup-step-title">ID del Google Sheet</div>
+          <div class="setup-step-desc">
+            Lo encontrás en la URL de tu sheet:<br>
+            <code>docs.google.com/spreadsheets/d/<strong>[ID_ACÁ]</strong>/edit</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">ID del Google Sheet</div>
+        <input type="text" id="config-sheet-id" class="config-field" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+      </div>
+
+      <button class="btn-primary" onclick="saveConfig()">Guardar y continuar</button>
+    </div>
+
+    <div class="card" style="background:var(--purple-xl);border:none;box-shadow:none;">
+      <div style="font-size:13px;color:var(--purple);font-weight:600;margin-bottom:6px;">💡 Modo demo</div>
+      <div style="font-size:12px;color:var(--gray-5);line-height:1.5;">
+        Para probar la app sin conectar un Sheet real, usá el modo demo. Los datos se guardan localmente en el dispositivo.
+      </div>
+      <button class="btn-secondary" style="margin-top:12px;margin-bottom:0;" onclick="enableDemo()">Probar en modo demo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: LOGIN
+═════════════════════════════════════════ -->
+<div id="screen-login" class="screen">
+  <div class="login-box">
+    <div class="login-logo">VIN<span>.</span></div>
+    <div class="login-tagline">Sistema de reposición</div>
+    <input type="text" id="login-usuario" class="login-field" placeholder="Usuario" autocomplete="username" autocapitalize="none">
+    <input type="password" id="login-pass" class="login-field" placeholder="Contraseña" autocomplete="current-password">
+    <button class="btn-primary" id="login-btn" onclick="doLogin()">Ingresar</button>
+    <div id="login-error" style="color:#ff8a80;font-size:13px;margin-top:10px;min-height:18px;"></div>
+    <div style="margin-top:20px;">
+      <button style="background:none;color:var(--gray-3);font-size:12px;text-decoration:underline;" onclick="goToConfig()">Cambiar configuración</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: HOME (selector de sedes)
+═════════════════════════════════════════ -->
+<div id="screen-home" class="screen">
+  <div class="topbar">
+    <div class="logo">VIN<span>.</span></div>
+    <div class="subtitle" id="home-greeting">Hola</div>
+    <div class="badge-user" id="home-user-badge">—</div>
+  </div>
+  <div class="content">
+
+    <!-- Alertas de stock urgentes -->
+    <div id="stock-alerts-home"></div>
+
+    <div class="section-label">Seleccioná una sede para reponer</div>
+    <div class="sede-grid" id="sede-grid">
+      <!-- generado dinámicamente -->
+    </div>
+
+    <div style="margin-top:20px;">
+      <button class="btn-secondary" onclick="showMisCobros()">💰 Mis cobros</button>
+      <button class="btn-secondary" onclick="showDashboard()">📊 Dashboard stock</button>
+      <button class="btn-danger" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: REPOSICION (flujo principal)
+═════════════════════════════════════════ -->
+<div id="screen-repo" class="screen">
+  <div class="topbar">
+    <button class="back-btn show" onclick="goHome()">‹</button>
+    <div>
+      <div class="logo" style="font-size:16px;">VIN<span>.</span></div>
+      <div class="subtitle" id="repo-sede-name">Sede</div>
+    </div>
+    <div class="badge-user" id="repo-user-badge">—</div>
+  </div>
+  <div id="step-progress-bar" class="step-progress">
+    <!-- dots generados -->
+  </div>
+  <div class="content" id="repo-content">
+    <!-- generado dinámicamente -->
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: MIS COBROS
+═════════════════════════════════════════ -->
+<div id="screen-cobros" class="screen">
+  <div class="topbar">
+    <button class="back-btn show" onclick="goHome()">‹</button>
+    <div class="logo">VIN<span>.</span></div>
+    <div class="subtitle">Mis cobros</div>
+  </div>
+  <div class="content">
+    <div id="cobros-content"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     SCREEN: DASHBOARD
+═════════════════════════════════════════ -->
+<div id="screen-dashboard" class="screen">
+  <div class="topbar">
+    <button class="back-btn show" onclick="goHome()">‹</button>
+    <div class="logo">VIN<span>.</span></div>
+    <div class="subtitle">Stock por sede</div>
+  </div>
+  <div class="content" id="dashboard-content"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ════════════════════════════════════════════════════════════════
+const STATE = {
+  scriptUrl: '',
+  sheetId: '',
+  demo: false,
+  user: null,       // { id, nombre, usuario }
+  sedeActual: null, // { id, nombre }
+  repoId: null,
+  pasoActual: 0,
+  canisterData: [], // config de los 7 canister de la sede
+  canisterCargado: {}, // {can_nro: {lote, venc, grs, nota}}
+  fotoAntes: null,
+  fotoDespues: null,
+  firmaData: null,
+};
+
+const TOTAL_PASOS = 7; // Login→Home no cuenta, repo tiene 7 pasos
+
+// ════════════════════════════════════════════════════════════════
+// PERSISTENCIA LOCAL
+// ════════════════════════════════════════════════════════════════
+function saveLocal(key, val) { try { localStorage.setItem('vin_'+key, JSON.stringify(val)); } catch(e){} }
+function loadLocal(key, def) { try { const v = localStorage.getItem('vin_'+key); return v ? JSON.parse(v) : def; } catch(e){ return def; } }
+
+// ════════════════════════════════════════════════════════════════
+// NAVEGACIÓN
+// ════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  STATE.scriptUrl = loadLocal('scriptUrl', '');
+  STATE.sheetId   = loadLocal('sheetId', '');
+  STATE.demo      = loadLocal('demo', false);
+
+  if (STATE.scriptUrl || STATE.demo) {
+    showScreen('screen-login');
+  } else {
+    showScreen('screen-config');
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════════════
+function saveConfig() {
+  const url = document.getElementById('config-url').value.trim();
+  const sid = document.getElementById('config-sheet-id').value.trim();
+  if (!url || !sid) { showToast('Completá ambos campos'); return; }
+  STATE.scriptUrl = url;
+  STATE.sheetId = sid;
+  STATE.demo = false;
+  saveLocal('scriptUrl', url);
+  saveLocal('sheetId', sid);
+  saveLocal('demo', false);
+  showToast('✅ Configuración guardada');
+  showScreen('screen-login');
+}
+
+function enableDemo() {
+  STATE.demo = true;
+  STATE.scriptUrl = 'DEMO';
+  saveLocal('demo', true);
+  saveLocal('scriptUrl', 'DEMO');
+  showToast('Modo demo activado');
+  showScreen('screen-login');
+}
+
+function goToConfig() {
+  showScreen('screen-config');
+  if (STATE.scriptUrl && STATE.scriptUrl !== 'DEMO') {
+    document.getElementById('config-url').value = STATE.scriptUrl;
+  }
+  if (STATE.sheetId) {
+    document.getElementById('config-sheet-id').value = STATE.sheetId;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// DATOS DEMO
+// ════════════════════════════════════════════════════════════════
+const DEMO_DATA = {
+  repositores: [
+    { id:'REP_LUC', nombre:'Luciano García', usuario:'luciano', pass:'1234', sedes:['SC_BLL','SC_PAL','GYM_BEL'] },
+    { id:'REP_MAR', nombre:'Martina López',  usuario:'martina', pass:'1234', sedes:['MEGATLON_NUN','SC_BLL'] },
+  ],
+  sedes: [
+    { id:'SC_BLL',     nombre:'Sportclub Ballester',  ciudad:'Gral. San Martín', lat:-34.5421, lng:-58.5603 },
+    { id:'SC_PAL',     nombre:'Sportclub Palermo',     ciudad:'CABA',             lat:-34.5891, lng:-58.4241 },
+    { id:'GYM_BEL',    nombre:'Gym Belgrano',           ciudad:'CABA',             lat:-34.5566, lng:-58.4587 },
+    { id:'MEGATLON_NUN',nombre:'Megatlon Núñez',        ciudad:'CABA',             lat:-34.5412, lng:-58.4621 },
+  ],
+  canister: {
+    SC_BLL: [
+      { nro:1, orden:1, id:'PROT_CC',   nombre:'Proteína Cookies & Cream', grs:930, repl:1007, servicios:31, reserva:true, tacc:false, nota:'' },
+      { nro:2, orden:2, id:'PROT_VAN',  nombre:'Proteína Vainilla',         grs:930, repl:1007, servicios:31, reserva:true, tacc:false, nota:'' },
+      { nro:3, orden:3, id:'PROT_CHOC', nombre:'Proteína Chocolate',        grs:930, repl:1007, servicios:31, reserva:true, tacc:false, nota:'' },
+      { nro:4, orden:4, id:'CARBO_EN',  nombre:'Carbo Energy',              grs:540, repl:380,  servicios:20, reserva:true, tacc:false, nota:'⚠️ Verificar picos y tornillo — se empasta' },
+      { nro:5, orden:5, id:'COLAG_SP',  nombre:'Colágeno Sport',            grs:407, repl:435,  servicios:31, reserva:true, tacc:false, nota:'' },
+      { nro:6, orden:6, id:'CREAT_MN',  nombre:'Creatina Monohidrato',      grs:814, repl:825,  servicios:162,reserva:false,tacc:false, nota:'' },
+      { nro:7, orden:7, id:'PRE_ENT',   nombre:'Pre Entreno',               grs:800, repl:600,  servicios:40, reserva:true, tacc:true,  nota:'⚠️ TIENE TACC — cargar siempre al final. Verificar picos y tornillo.' },
+    ],
+  },
+  cobros: [
+    { id:'COB-001', fecha:'15/06/2024', sede:'Sportclub Ballester', monto:3500, estado:'PENDIENTE' },
+    { id:'COB-002', fecha:'10/06/2024', sede:'Sportclub Ballester', monto:3500, estado:'PAGADO' },
+    { id:'COB-003', fecha:'12/06/2024', sede:'Sportclub Palermo',   monto:3500, estado:'PAGADO' },
+  ],
+  stockActual: {
+    SC_BLL: [
+      { nombre:'Proteína C&C',    pct:0.67 },
+      { nombre:'Proteína Vainilla',pct:0.80 },
+      { nombre:'Proteína Choco',  pct:0.18 },
+      { nombre:'Carbo Energy',    pct:0.55 },
+      { nombre:'Colágeno Sport',  pct:0.40 },
+      { nombre:'Creatina',        pct:0.75 },
+      { nombre:'Pre Entreno',     pct:0.45 },
+    ],
+  },
+};
+
+// ════════════════════════════════════════════════════════════════
+// API CALL (real o demo)
+// ════════════════════════════════════════════════════════════════
+async function apiCall(action, params={}) {
+  if (STATE.demo) return demoHandler(action, params);
+  try {
+    const url = new URL(STATE.scriptUrl);
+    url.searchParams.set('action', action);
+    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : v));
+    const res = await fetch(url.toString());
+    return await res.json();
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+async function apiPost(action, data={}) {
+  if (STATE.demo) return demoHandler(action, data);
+  try {
+    const res = await fetch(STATE.scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...data }),
+    });
+    return await res.json();
+  } catch(e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+function demoHandler(action, params) {
+  switch(action) {
+    case 'login': {
+      const u = DEMO_DATA.repositores.find(r => r.usuario === params.usuario && r.pass === params.pass);
+      return u ? { ok:true, user: { id:u.id, nombre:u.nombre, usuario:u.usuario, sedes:u.sedes } }
+               : { ok:false, error:'Usuario o contraseña incorrectos' };
+    }
+    case 'getSedes': {
+      const sedes = DEMO_DATA.sedes.filter(s => STATE.user.sedes.includes(s.id));
+      return { ok:true, sedes };
+    }
+    case 'getCanister': {
+      const can = DEMO_DATA.canister[params.sedeId] || DEMO_DATA.canister['SC_BLL'];
+      return { ok:true, canister: [...can].sort((a,b)=>a.orden-b.orden) };
+    }
+    case 'getStockActual': {
+      const stock = DEMO_DATA.stockActual[params.sedeId] || DEMO_DATA.stockActual['SC_BLL'];
+      return { ok:true, stock };
+    }
+    case 'getCobros': {
+      const saved = loadLocal('cobros_demo_'+STATE.user.id, DEMO_DATA.cobros);
+      return { ok:true, cobros: saved };
+    }
+    case 'saveReposicion':
+    case 'saveLote': {
+      return { ok:true };
+    }
+    default:
+      return { ok:true };
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// LOGIN
+// ════════════════════════════════════════════════════════════════
+async function doLogin() {
+  const usuario = document.getElementById('login-usuario').value.trim();
+  const pass    = document.getElementById('login-pass').value.trim();
+  const btn     = document.getElementById('login-btn');
+  const err     = document.getElementById('login-error');
+  err.textContent = '';
+  if (!usuario || !pass) { err.textContent = 'Ingresá usuario y contraseña.'; return; }
+
+  btn.innerHTML = '<div class="spinner"></div>';
+  btn.disabled = true;
+
+  const res = await apiCall('login', { usuario, pass });
+  btn.innerHTML = 'Ingresar'; btn.disabled = false;
+
+  if (!res.ok) { err.textContent = res.error || 'Error al ingresar'; return; }
+
+  STATE.user = res.user;
+  saveLocal('lastUser', res.user);
+  renderHome();
+}
+
+function doLogout() {
+  STATE.user = null;
+  STATE.sedeActual = null;
+  document.getElementById('login-usuario').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').textContent = '';
+  showScreen('screen-login');
+}
+
+// ════════════════════════════════════════════════════════════════
+// HOME
+// ════════════════════════════════════════════════════════════════
+async function renderHome() {
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('home-greeting').textContent = greeting + ',';
+  document.getElementById('home-user-badge').textContent = STATE.user.nombre.split(' ')[0];
+
+  showScreen('screen-home');
+
+  const grid = document.getElementById('sede-grid');
+  grid.innerHTML = '<div style="color:var(--gray-3);font-size:13px;padding:10px 0;">Cargando sedes...</div>';
+
+  const res = await apiCall('getSedes', { userId: STATE.user.id });
+  if (!res.ok) { grid.innerHTML = '<div style="color:var(--red)">Error al cargar sedes</div>'; return; }
+
+  // Alertas de stock
+  renderStockAlerts(res.sedes);
+
+  grid.innerHTML = '';
+  res.sedes.forEach(sede => {
+    const div = document.createElement('div');
+    div.className = 'sede-card';
+    div.innerHTML = `
+      <div class="sede-icon">🏋️</div>
+      <div class="sede-name">${sede.nombre}</div>
+      <div class="sede-status">● Activo</div>
+    `;
+    div.onclick = () => iniciarReposicion(sede);
+    grid.appendChild(div);
+  });
+}
+
+async function renderStockAlerts(sedes) {
+  const alertDiv = document.getElementById('stock-alerts-home');
+  alertDiv.innerHTML = '';
+  // Check stock for first sede as example
+  if (!sedes.length) return;
+  const res = await apiCall('getStockActual', { sedeId: sedes[0].id });
+  if (!res.ok) return;
+  const urgentes = res.stock.filter(s => s.pct < 0.2);
+  if (urgentes.length) {
+    alertDiv.innerHTML = `
+      <div style="background:var(--red-l);border:1.5px solid var(--red);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;font-size:13px;color:#721c24;">
+        <strong>⚠️ Stock crítico en ${sedes[0].nombre}:</strong><br>
+        ${urgentes.map(u => `${u.nombre} (${Math.round(u.pct*100)}%)`).join(', ')}. Reponer urgente.
+      </div>`;
+  }
+}
+
+function goHome() { renderHome(); }
+
+// ════════════════════════════════════════════════════════════════
+// FLUJO DE REPOSICION
+// ════════════════════════════════════════════════════════════════
+async function iniciarReposicion(sede) {
+  STATE.sedeActual = sede;
+  STATE.pasoActual = 1;
+  STATE.canisterCargado = {};
+  STATE.fotoAntes = null;
+  STATE.fotoDespues = null;
+  STATE.firmaData = null;
+  STATE.repoId = 'REP-' + Date.now();
+
+  document.getElementById('repo-sede-name').textContent = sede.nombre;
+  document.getElementById('repo-user-badge').textContent = STATE.user.nombre.split(' ')[0];
+
+  showScreen('screen-repo');
+
+  // Cargar canister de la sede
+  const res = await apiCall('getCanister', { sedeId: sede.id });
+  if (!res.ok) { showToast('Error al cargar canister'); return; }
+  STATE.canisterData = res.canister;
+
+  renderPaso(1);
+}
+
+function renderProgreso(pasoActual, totalPasos) {
+  const bar = document.getElementById('step-progress-bar');
+  bar.innerHTML = '';
+  for (let i = 1; i <= totalPasos; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (i < pasoActual ? ' done' : i === pasoActual ? ' active' : '');
+    bar.appendChild(dot);
+  }
+}
+
+function renderPaso(paso) {
+  STATE.pasoActual = paso;
+  renderProgreso(paso, TOTAL_PASOS);
+  const content = document.getElementById('repo-content');
+  content.innerHTML = '';
+
+  switch(paso) {
+    case 1: renderPaso1(content); break;
+    case 2: renderPaso2(content); break;
+    case 3: renderPaso3(content); break;
+    case 4: renderPasoCanister(content); break;
+    case 5: renderPasoFotoFinal(content); break;
+    case 6: renderPasoPicos(content); break;
+    case 7: renderPasoFirma(content); break;
+  }
+}
+
+// ── PASO 1: Limpieza ──────────────────────────────────────────
+function renderPaso1(container) {
+  container.innerHTML = `
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num" id="p1-num">1</div>
+        <div>
+          <div class="step-title">Limpieza de tacho de desechos</div>
+          <div class="step-subtitle">Completar antes de continuar</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="check-item" onclick="toggleCheck('c1-limpieza',this)">
+          <div class="check-box" id="c1-limpieza"><span class="check-tick">✓</span></div>
+          <div>
+            <div class="check-label">Vacié y limpié el tacho de desechos de la máquina</div>
+          </div>
+        </div>
+        <div class="check-item" onclick="toggleCheck('c1-entorno',this)">
+          <div class="check-box" id="c1-entorno"><span class="check-tick">✓</span></div>
+          <div>
+            <div class="check-label">Revisé el entorno de la máquina (limpio, sin obstáculos)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-paso1" disabled onclick="avanzarPaso(2)">Continuar →</button>
+  `;
+
+  checkBtnPaso('btn-paso1', ['c1-limpieza','c1-entorno']);
+}
+
+// ── PASO 2: Foto antes ───────────────────────────────────────
+function renderPaso2(container) {
+  container.innerHTML = `
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">Foto de los canister antes</div>
+          <div class="step-subtitle">Registrar estado inicial</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p style="font-size:13px;color:var(--gray-4);margin-bottom:14px;line-height:1.5;">
+          Sacá una foto del estado de los canister <strong>antes</strong> de empezar la carga. Esto registra el nivel inicial.
+        </p>
+        <div class="photo-zone" id="pz-antes" onclick="triggerFoto('foto-antes')">
+          <div class="photo-icon">📸</div>
+          <div class="photo-label">Tocá para sacar foto</div>
+          <img class="photo-preview" id="preview-antes">
+          <input type="file" id="foto-antes" accept="image/*" capture="environment" onchange="handleFoto(this,'pz-antes','preview-antes','fotoAntes','btn-paso2')">
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-paso2" disabled onclick="avanzarPaso(3)">Continuar →</button>
+  `;
+}
+
+// ── PASO 3: EPP ───────────────────────────────────────────────
+function renderPaso3(container) {
+  container.innerHTML = `
+    <div class="epp-banner">
+      <div class="epp-icon">🧤</div>
+      <div>
+        <strong>Antes de continuar:</strong><br>
+        Ponete guantes, gorra y tapaboca.<br>
+        <span style="font-size:12px;opacity:0.8;">Obligatorio para manipular productos alimenticios.</span>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-title">Equipo de protección personal</div>
+          <div class="step-subtitle">Confirmar antes de manipular productos</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="check-item" onclick="toggleCheck('c3-guantes',this)">
+          <div class="check-box" id="c3-guantes"><span class="check-tick">✓</span></div>
+          <div class="check-label">🧤 Tengo puestos los guantes</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck('c3-gorra',this)">
+          <div class="check-box" id="c3-gorra"><span class="check-tick">✓</span></div>
+          <div class="check-label">🧢 Tengo puesta la gorra</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck('c3-tapaboca',this)">
+          <div class="check-box" id="c3-tapaboca"><span class="check-tick">✓</span></div>
+          <div class="check-label">😷 Tengo puesto el tapaboca</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck('c3-picos',this)">
+          <div class="check-box" id="c3-picos"><span class="check-tick">✓</span></div>
+          <div class="check-label">Levanté todos los picos de los canister</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-paso3" disabled onclick="avanzarPaso(4)">Continuar →</button>
+  `;
+  checkBtnPaso('btn-paso3', ['c3-guantes','c3-gorra','c3-tapaboca','c3-picos']);
+}
+
+// ── PASO 4: CANISTER ─────────────────────────────────────────
+function renderPasoCanister(container) {
+  const canister = [...STATE.canisterData].sort((a,b) => a.orden - b.orden);
+
+  let html = `
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div>
+          <div class="step-title">Reponer canister</div>
+          <div class="step-subtitle">Sin TACC primero — Pre Entreno al final</div>
+        </div>
+      </div>
+      <div class="step-body" style="padding-bottom:8px;">
+        <p style="font-size:12px;color:var(--gray-4);line-height:1.5;">
+          Completá la carga de cada canister. Los productos <strong>con TACC</strong> están marcados en rojo y deben cargarse al final.
+        </p>
+      </div>
+    </div>
+    <div class="canister-list" id="canister-list">
+  `;
+
+  canister.forEach(can => {
+    const isTacc = can.tacc;
+    html += `
+      <div class="can-card ${isTacc ? 'tacc-can' : ''}" id="cancard-${can.nro}">
+        <div class="can-header" onclick="toggleCanister(${can.nro})">
+          <div class="can-num ${isTacc ? 'tacc' : ''}" id="can-num-${can.nro}">${can.nro}</div>
+          <div style="flex:1">
+            <div class="can-name">${can.nombre}</div>
+            <div class="can-subname">
+              Replenishment: <strong>${can.repl}g</strong> · ${can.servicios} servicios
+              ${isTacc ? '<span class="badge badge-rojo">TACC</span>' : ''}
+            </div>
+          </div>
+          <div class="can-chevron" id="chev-${can.nro}">›</div>
+        </div>
+        <div class="can-body" id="canbody-${can.nro}">
+          ${can.nota ? `<div class="warn-tag">⚠️ ${can.nota}</div>` : ''}
+          <div class="repl-info">
+            <strong>Cargar hasta:</strong> ${can.repl}g · ${can.servicios} servicios de ${can.grs > 500 ? 30 : can.grs > 400 ? (can.id==='CREAT_MN' ? 5 : 13) : 27}g
+            ${can.reserva ? '<br>📦 Dejar <strong>1 pote de reserva</strong> en el depósito bajo la máquina.' : ''}
+          </div>
+          <div class="field-group">
+            <div class="field-label">Número de lote del pote</div>
+            <input type="text" class="field-input" id="lote-${can.nro}" placeholder="Ej: LOT240301" autocapitalize="characters">
+          </div>
+          <div class="lote-row">
+            <div class="field-group">
+              <div class="field-label">Fecha de vencimiento</div>
+              <input type="date" class="field-input" id="venc-${can.nro}">
+            </div>
+            <div class="field-group">
+              <div class="field-label">Gramos cargados</div>
+              <input type="number" class="field-input" id="grs-${can.nro}" placeholder="${can.repl}" value="${can.repl}">
+            </div>
+          </div>
+          <div class="field-group">
+            <div class="field-label">¿Reserva disponible abajo?</div>
+            <select class="field-input" id="res-${can.nro}">
+              <option value="SI">✅ Sí, hay pote de reserva</option>
+              <option value="NO"${!can.reserva ? ' selected' : ''}>⚠️ No hay pote de reserva</option>
+            </select>
+          </div>
+          <div id="venc-alert-${can.nro}"></div>
+          <button class="can-save-btn" id="cansave-${can.nro}" onclick="saveCanister(${can.nro})">Guardar canister ${can.nro}</button>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div>
+    <div style="margin-top:14px;">
+      <button class="btn-primary" id="btn-paso4" disabled onclick="avanzarPaso(5)">Terminar carga de productos →</button>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  // Check vencimiento al escribir
+  canister.forEach(can => {
+    document.getElementById(`venc-${can.nro}`)?.addEventListener('change', () => checkVencimiento(can.nro));
+  });
+
+  checkBtnCanister();
+}
+
+function toggleCanister(nro) {
+  const body = document.getElementById(`canbody-${nro}`);
+  const chev = document.getElementById(`chev-${nro}`);
+  const isOpen = body.classList.contains('open');
+  // Cerrar todos
+  document.querySelectorAll('.can-body').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.can-chevron').forEach(c => c.classList.remove('open'));
+  if (!isOpen) { body.classList.add('open'); chev.classList.add('open'); }
+}
+
+function checkVencimiento(nro) {
+  const vencInput = document.getElementById(`venc-${nro}`);
+  const alertDiv  = document.getElementById(`venc-alert-${nro}`);
+  if (!vencInput || !alertDiv) return;
+  const val = vencInput.value;
+  if (!val) return;
+  const venc = new Date(val);
+  const hoy  = new Date();
+  const diff = (venc - hoy) / (1000*60*60*24);
+  if (diff < 0) {
+    alertDiv.innerHTML = `<div class="alerta-venc">🚫 Este producto ya venció. No lo cargues.</div>`;
+    vencInput.classList.add('err');
+  } else if (diff < 90) {
+    alertDiv.innerHTML = `<div class="alerta-venc">⚠️ Vence en ${Math.round(diff)} días (menos de 3 meses). Consultar con el admin antes de cargar.</div>`;
+    vencInput.classList.add('warn');
+  } else {
+    alertDiv.innerHTML = '';
+    vencInput.classList.remove('err','warn');
+  }
+}
+
+function saveCanister(nro) {
+  const lote = document.getElementById(`lote-${nro}`)?.value.trim();
+  const venc = document.getElementById(`venc-${nro}`)?.value;
+  const grs  = document.getElementById(`grs-${nro}`)?.value;
+
+  if (!lote || !venc || !grs) { showToast('Completá todos los campos del canister'); return; }
+
+  STATE.canisterCargado[nro] = { lote, venc, grs: parseFloat(grs), reserva: document.getElementById(`res-${nro}`)?.value };
+
+  // Marcar como cargado
+  const btn = document.getElementById(`cansave-${nro}`);
+  if (btn) { btn.textContent = '✅ Guardado'; btn.classList.add('saved'); }
+  const numEl = document.getElementById(`can-num-${nro}`);
+  if (numEl) { numEl.classList.remove('tacc'); numEl.classList.add('done-num'); }
+  const card = document.getElementById(`cancard-${nro}`);
+  if (card) { card.classList.remove('tacc-can'); card.classList.add('done-can'); }
+
+  // Cerrar el canister
+  document.getElementById(`canbody-${nro}`)?.classList.remove('open');
+  document.getElementById(`chev-${nro}`)?.classList.remove('open');
+
+  showToast(`Canister ${nro} guardado ✅`);
+  checkBtnCanister();
+}
+
+function checkBtnCanister() {
+  const total = STATE.canisterData.length;
+  const cargados = Object.keys(STATE.canisterCargado).length;
+  const btn = document.getElementById('btn-paso4');
+  if (btn) btn.disabled = cargados < total;
+}
+
+// ── PASO 5: Foto final ────────────────────────────────────────
+function renderPasoFotoFinal(container) {
+  container.innerHTML = `
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num">5</div>
+        <div>
+          <div class="step-title">Foto de los canister cargados</div>
+          <div class="step-subtitle">Registrar estado final</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="photo-zone" id="pz-despues" onclick="triggerFoto('foto-despues')">
+          <div class="photo-icon">📸</div>
+          <div class="photo-label">Foto canister después de cargar</div>
+          <img class="photo-preview" id="preview-despues">
+          <input type="file" id="foto-despues" accept="image/*" capture="environment" onchange="handleFoto(this,'pz-despues','preview-despues','fotoDespues','btn-paso5')">
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-paso5" disabled onclick="avanzarPaso(6)">Continuar →</button>
+  `;
+}
+
+// ── PASO 6: Picos ─────────────────────────────────────────────
+function renderPasoPicos(container) {
+  container.innerHTML = `
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num">6</div>
+        <div>
+          <div class="step-title">Volver a colocar los picos</div>
+          <div class="step-subtitle">Verificar cierre correcto</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="warn-tag" style="margin-bottom:14px;">
+          ⚠️ Verificar que todos los picos de los canister estén correctamente colocados y cerrados antes de continuar.
+        </div>
+        <div class="check-item" onclick="toggleCheck('c6-picos',this)">
+          <div class="check-box" id="c6-picos"><span class="check-tick">✓</span></div>
+          <div class="check-label">Volví a colocar y cerré correctamente todos los picos</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck('c6-limpieza',this)">
+          <div class="check-box" id="c6-limpieza"><span class="check-tick">✓</span></div>
+          <div class="check-label">Limpié la zona alrededor de la máquina</div>
+        </div>
+        <div class="check-item" onclick="toggleCheck('c6-reservas',this)">
+          <div class="check-box" id="c6-reservas"><span class="check-tick">✓</span></div>
+          <div class="check-label">Verifiqué los potes de reserva en el depósito</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-paso6" disabled onclick="avanzarPaso(7)">Continuar →</button>
+  `;
+  checkBtnPaso('btn-paso6', ['c6-picos','c6-limpieza','c6-reservas']);
+}
+
+// ── PASO 7: Firma ─────────────────────────────────────────────
+function renderPasoFirma(container) {
+  container.innerHTML = `
+    <div class="cobro-card">
+      <div class="cobro-label">Cobro por esta reposición</div>
+      <div class="cobro-monto">$ 3.500</div>
+      <div class="cobro-sede">${STATE.sedeActual.nombre}</div>
+    </div>
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num">7</div>
+        <div>
+          <div class="step-title">Firma de reposición</div>
+          <div class="step-subtitle">${STATE.user.nombre}</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <p style="font-size:13px;color:var(--gray-4);margin-bottom:12px;">Firmá con el dedo para confirmar que completaste la reposición.</p>
+        <canvas class="firma-area" id="firma-canvas" width="480" height="120"></canvas>
+        <button class="firma-clear" onclick="clearFirma()">Borrar firma</button>
+      </div>
+    </div>
+    <button class="btn-primary" id="btn-firmar" onclick="finalizarReposicion()">✅ Finalizar reposición</button>
+  `;
+
+  initFirma();
+}
+
+// ════════════════════════════════════════════════════════════════
+// FIRMA CANVAS
+// ════════════════════════════════════════════════════════════════
+let firmaCtx, firmaDrawing = false, firmaHasContent = false;
+
+function initFirma() {
+  const canvas = document.getElementById('firma-canvas');
+  if (!canvas) return;
+  firmaCtx = canvas.getContext('2d');
+  firmaCtx.strokeStyle = '#1A1A2E';
+  firmaCtx.lineWidth = 2.5;
+  firmaCtx.lineCap = 'round';
+  firmaDrawing = false;
+  firmaHasContent = false;
+
+  const getPos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return { x: (touch.clientX - rect.left) * scaleX, y: (touch.clientY - rect.top) * scaleY };
+  };
+
+  canvas.addEventListener('mousedown',  (e) => { firmaDrawing = true; firmaCtx.beginPath(); const p=getPos(e); firmaCtx.moveTo(p.x,p.y); });
+  canvas.addEventListener('mousemove',  (e) => { if (!firmaDrawing) return; const p=getPos(e); firmaCtx.lineTo(p.x,p.y); firmaCtx.stroke(); firmaHasContent = true; });
+  canvas.addEventListener('mouseup',    ()  => { firmaDrawing = false; });
+  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); firmaDrawing = true; firmaCtx.beginPath(); const p=getPos(e); firmaCtx.moveTo(p.x,p.y); }, { passive:false });
+  canvas.addEventListener('touchmove',  (e) => { e.preventDefault(); if (!firmaDrawing) return; const p=getPos(e); firmaCtx.lineTo(p.x,p.y); firmaCtx.stroke(); firmaHasContent = true; }, { passive:false });
+  canvas.addEventListener('touchend',   ()  => { firmaDrawing = false; });
+}
+
+function clearFirma() {
+  const canvas = document.getElementById('firma-canvas');
+  if (canvas && firmaCtx) { firmaCtx.clearRect(0,0,canvas.width,canvas.height); firmaHasContent = false; }
+}
+
+// ════════════════════════════════════════════════════════════════
+// HELPERS CHECK / FOTO
+// ════════════════════════════════════════════════════════════════
+function toggleCheck(id, item) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  box.classList.toggle('checked');
+  // Refrescar cualquier btn que dependa de esto
+  ['btn-paso1','btn-paso3','btn-paso6'].forEach(btnId => {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      const deps = btn._deps || [];
+      if (deps.length) btn.disabled = !deps.every(d => document.getElementById(d)?.classList.contains('checked'));
+    }
+  });
+}
+
+function checkBtnPaso(btnId, depIds) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn._deps = depIds;
+  const refresh = () => { btn.disabled = !depIds.every(d => document.getElementById(d)?.classList.contains('checked')); };
+  depIds.forEach(d => {
+    const el = document.getElementById(d)?.closest('.check-item');
+    if (el) el.addEventListener('click', refresh);
+  });
+}
+
+function triggerFoto(inputId) {
+  document.getElementById(inputId)?.click();
+}
+
+function handleFoto(input, zoneId, previewId, stateKey, btnId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    STATE[stateKey] = e.target.result;
+    const preview = document.getElementById(previewId);
+    if (preview) { preview.src = e.target.result; preview.classList.add('show'); }
+    document.getElementById(zoneId)?.classList.add('has-photo');
+    document.querySelector(`#${zoneId} .photo-label`).textContent = '✅ Foto registrada — tocá para cambiar';
+    const btn = document.getElementById(btnId);
+    if (btn) btn.disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+function avanzarPaso(paso) {
+  renderPaso(paso);
+  window.scrollTo(0,0);
+}
+
+// ════════════════════════════════════════════════════════════════
+// FINALIZAR REPOSICION
+// ════════════════════════════════════════════════════════════════
+async function finalizarReposicion() {
+  if (!firmaHasContent) { showToast('Firmá antes de finalizar'); return; }
+
+  const btn = document.getElementById('btn-firmar');
+  btn.innerHTML = '<div class="spinner"></div>'; btn.disabled = true;
+
+  const canvas = document.getElementById('firma-canvas');
+  STATE.firmaData = canvas?.toDataURL('image/png');
+
+  const repoData = {
+    id:         STATE.repoId,
+    fechaHora:  new Date().toLocaleString('es-AR'),
+    sedeId:     STATE.sedeActual.id,
+    sedeName:   STATE.sedeActual.nombre,
+    repoId:     STATE.user.id,
+    repoNombre: STATE.user.nombre,
+    canister:   STATE.canisterCargado,
+    firmaData:  STATE.firmaData,
+  };
+
+  await apiPost('saveReposicion', repoData);
+
+  // Guardar cobro demo
+  if (STATE.demo) {
+    const cobros = loadLocal('cobros_demo_'+STATE.user.id, []);
+    cobros.unshift({
+      id: 'COB-'+Date.now(),
+      fecha: new Date().toLocaleDateString('es-AR'),
+      sede: STATE.sedeActual.nombre,
+      monto: 3500,
+      estado: 'PENDIENTE',
+    });
+    saveLocal('cobros_demo_'+STATE.user.id, cobros);
+  }
+
+  btn.innerHTML = '✅ Finalizar reposición'; btn.disabled = false;
+
+  showPasoCompletado();
+}
+
+function showPasoCompletado() {
+  const content = document.getElementById('repo-content');
+  document.getElementById('step-progress-bar').innerHTML = '';
+  for (let i = 0; i < TOTAL_PASOS; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'step-dot done';
+    document.getElementById('step-progress-bar').appendChild(dot);
+  }
+
+  content.innerHTML = `
+    <div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:72px;margin-bottom:16px;">✅</div>
+      <div style="font-size:24px;font-weight:900;color:var(--green);margin-bottom:8px;">¡Reposición completa!</div>
+      <div style="font-size:15px;color:var(--gray-4);margin-bottom:8px;">${STATE.sedeActual.nombre}</div>
+      <div style="font-size:14px;color:var(--gray-4);margin-bottom:32px;">${new Date().toLocaleString('es-AR')}</div>
+      <div class="cobro-card">
+        <div class="cobro-label">Cobro registrado</div>
+        <div class="cobro-monto">$ 3.500</div>
+        <div class="cobro-sede">${STATE.user.nombre}</div>
+      </div>
+      <button class="btn-secondary" onclick="renderHome()">← Volver al inicio</button>
+    </div>
+  `;
+  showToast('Reposición guardada 🎉');
+}
+
+// ════════════════════════════════════════════════════════════════
+// MIS COBROS
+// ════════════════════════════════════════════════════════════════
+async function showMisCobros() {
+  showScreen('screen-cobros');
+  const div = document.getElementById('cobros-content');
+  div.innerHTML = '<div style="color:var(--gray-3);text-align:center;padding:20px;">Cargando...</div>';
+
+  const res = await apiCall('getCobros', { userId: STATE.user.id });
+  if (!res.ok) { div.innerHTML = '<div style="color:var(--red)">Error al cargar cobros</div>'; return; }
+
+  const cobros = res.cobros;
+  const pendiente = cobros.filter(c => c.estado === 'PENDIENTE').reduce((s,c) => s + c.monto, 0);
+  const total = cobros.reduce((s,c) => s + c.monto, 0);
+
+  let html = `
+    <div class="cobro-card">
+      <div class="cobro-label">Pendiente de cobro</div>
+      <div class="cobro-monto">$ ${pendiente.toLocaleString('es-AR')}</div>
+      <div class="cobro-sede">${STATE.user.nombre}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Historial</div>
+  `;
+
+  cobros.forEach(c => {
+    html += `
+      <div class="cobro-row">
+        <div>
+          <div class="cobro-row-sede">${c.sede}</div>
+          <div class="cobro-row-fecha">${c.fecha} · <span style="font-weight:600;color:${c.estado==='PENDIENTE'?'var(--amber)':'var(--green)'}">${c.estado}</span></div>
+        </div>
+        <div class="cobro-row-monto">$ ${c.monto.toLocaleString('es-AR')}</div>
+      </div>
+    `;
+  });
+
+  html += `
+      <div class="cobro-total">
+        <div class="cobro-total-label">Total acumulado</div>
+        <div class="cobro-total-monto">$ ${total.toLocaleString('es-AR')}</div>
+      </div>
+    </div>
+  `;
+
+  div.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════════════
+// DASHBOARD STOCK
+// ════════════════════════════════════════════════════════════════
+async function showDashboard() {
+  showScreen('screen-dashboard');
+  const div = document.getElementById('dashboard-content');
+  div.innerHTML = '<div style="color:var(--gray-3);text-align:center;padding:20px;">Cargando...</div>';
+
+  const res = await apiCall('getStockActual', { sedeId: STATE.user.sedes?.[0] || 'SC_BLL' });
+  if (!res.ok) { div.innerHTML = '<div style="color:var(--red)">Error al cargar stock</div>'; return; }
+
+  // Mapa placeholder
+  let html = `
+    <div class="mapa-box">
+      <div class="mapa-icon">📍</div>
+      <div style="font-weight:700;margin-bottom:4px;">Google Maps — Recorrido optimizado</div>
+      <div style="font-size:12px;opacity:0.8;">Disponible en la próxima versión.<br>Se mostrará la ruta óptima entre sedes con stock crítico.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Stock actual por canister</div>
+  `;
+
+  res.stock.forEach(item => {
+    const pct = item.pct;
+    const pctStr = Math.round(pct * 100) + '%';
+    const cls = pct < 0.2 ? 'low' : pct < 0.4 ? 'warn' : 'ok';
+    html += `
+      <div class="stock-bar-wrap">
+        <div class="stock-bar-label">
+          <span class="stock-bar-name">${item.nombre}</span>
+          <span class="stock-bar-pct">${pctStr}${pct < 0.2 ? ' ⚠️' : ''}</span>
+        </div>
+        <div class="stock-bar-track">
+          <div class="stock-bar-fill ${cls}" style="width:${pctStr}"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  div.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
